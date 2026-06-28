@@ -2,114 +2,563 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mine Game</title>
-
+<title>Gem Grid</title>
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,Helvetica,sans-serif;
-}
+  :root {
+    --bg: #0f1923;
+    --panel: #16212e;
+    --tile: #2f7fe0;
+    --tile-hover: #3a8bf0;
+    --tile-revealed: #16212e;
+    --green: #1fd97a;
+    --green-glow: rgba(31,217,122,0.45);
+    --red: #ff4d5e;
+    --text: #eaf2fb;
+    --muted: #7c93ab;
+    --accent: #ffd23f;
+  }
 
-body{
-    background:#0f172a;
-    color:white;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-.container{
-    max-width:700px;
-    text-align:center;
-    padding:40px;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
 
-h1{
-    font-size:56px;
-    margin-bottom:15px;
-}
+  .app {
+    width: 100%;
+    max-width: 760px;
+  }
 
-p{
-    font-size:18px;
-    color:#cbd5e1;
-    line-height:1.7;
-    margin-bottom:35px;
-}
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
 
-.button{
-    display:inline-block;
-    text-decoration:none;
-    background:#22c55e;
-    color:white;
-    padding:16px 40px;
-    border-radius:10px;
-    font-size:18px;
-    font-weight:bold;
-    transition:.3s;
-}
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
 
-.button:hover{
-    background:#16a34a;
-    transform:translateY(-3px);
-}
+  .header .tag {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
-.features{
-    margin-top:50px;
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:20px;
-}
+  .layout {
+    display: grid;
+    grid-template-columns: 130px 1fr 130px;
+    gap: 16px;
+  }
 
-.card{
-    background:#1e293b;
-    padding:25px;
-    border-radius:12px;
-}
+  @media (max-width: 680px) {
+    .layout { grid-template-columns: 1fr; }
+    .stat-col { display: flex; flex-direction: row; gap: 10px; }
+    .stat-col.left { order: 2; }
+    .stat-col.right { order: 3; }
+    .grid-col { order: 1; }
+  }
 
-.card h3{
-    margin-bottom:10px;
-}
+  .stat-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stat-box {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    flex: 1;
+  }
+
+  .stat-box .label {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-box .value {
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .stat-box.gems .value { color: var(--green); }
+  .stat-box.mines .value { color: var(--red); }
+  .stat-box.score .value { color: var(--accent); }
+
+  .stat-box .icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .grid-col {
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .cell {
+    aspect-ratio: 1;
+    background: var(--tile);
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.2s ease;
+    position: relative;
+  }
+
+  .cell:hover:not(.revealed):not(.disabled) {
+    background: var(--tile-hover);
+    transform: translateY(-1px);
+  }
+
+  .cell:active:not(.revealed):not(.disabled) {
+    transform: translateY(0);
+  }
+
+  .cell.revealed {
+    background: var(--tile-revealed);
+    cursor: default;
+  }
+
+  .cell.gem {
+    box-shadow: 0 0 0 2px var(--green), 0 0 14px var(--green-glow);
+    animation: pop 0.25s ease;
+  }
+
+  .cell.mine {
+    background: #3a1a1f;
+    box-shadow: 0 0 0 2px var(--red);
+    animation: pop 0.25s ease;
+  }
+
+  .cell.disabled {
+    cursor: default;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0.85); }
+    60% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  .multiplier-track {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .mult-pill {
+    background: #0f1923;
+    border-radius: 6px;
+    text-align: center;
+    padding: 8px 4px;
+    border: 1.5px solid transparent;
+  }
+
+  .mult-pill .x {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .mult-pill .hits {
+    font-size: 9.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .mult-pill.active {
+    border-color: var(--accent);
+    background: #1c2a1a;
+  }
+  .mult-pill.active .x { color: var(--accent); }
+
+  .mult-pill.reached {
+    opacity: 0.55;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .mine-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0f1923;
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+
+  .mine-select label {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .mine-select select {
+    background: var(--tile);
+    color: var(--text);
+    border: none;
+    border-radius: 5px;
+    padding: 5px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn {
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn:active { transform: translateY(1px); }
+
+  .btn-new {
+    background: var(--accent);
+    color: #1a1606;
+  }
+
+  .btn-new:hover { filter: brightness(1.08); }
+
+  .btn-collect {
+    background: var(--green);
+    color: #04190f;
+  }
+
+  .btn-collect:hover:not(:disabled) { filter: brightness(1.08); }
+
+  .btn-collect:disabled {
+    background: #233040;
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .status-banner {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    min-height: 18px;
+  }
+
+  .status-banner.win { color: var(--green); font-weight: 700; }
+  .status-banner.lose { color: var(--red); font-weight: 700; }
+
+  .footnote {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 18px;
+    line-height: 1.5;
+  }
 </style>
-
 </head>
 <body>
 
-<div class="container">
+<div class="app">
+  <div class="header">
+    <h1>💎 Gem Grid</h1>
+    <span class="tag">Points Mode &middot; No Wagers</span>
+  </div>
 
-<h1>💎 Mine Game</h1>
+  <div class="status-banner" id="statusBanner">Pick a tile to begin</div>
 
-<p>
-Test your strategy by revealing safe tiles while avoiding hidden mines.
-This demo page is hosted with GitHub Pages and can be expanded into a
-full web application.
-</p>
+  <div class="layout">
+    <div class="stat-col left">
+      <div class="stat-box gems">
+        <div class="icon">💎</div>
+        <div class="label">Gems Found</div>
+        <div class="value" id="gemsFound">0</div>
+      </div>
+      <div class="stat-box mines">
+        <div class="icon">💣</div>
+        <div class="label">Mines</div>
+        <div class="value" id="minesValue">3</div>
+      </div>
+    </div>
 
-<a class="button" href="#">Play Now</a>
+    <div class="grid-col">
+      <div class="grid" id="grid"></div>
 
-<div class="features">
+      <div class="multiplier-track" id="multTrack"></div>
 
-<div class="card">
-<h3>💣 Hidden Mines</h3>
-<p>Avoid dangerous tiles and keep your streak going.</p>
+      <div class="controls" style="margin-bottom:10px;">
+        <div class="mine-select">
+          <label for="mineCount">Mines</label>
+          <select id="mineCount">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+        <button class="btn btn-new" id="newGameBtn">New Grid</button>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-collect" id="collectBtn" disabled>Collect Points</button>
+      </div>
+    </div>
+
+    <div class="stat-col right">
+      <div class="stat-box score">
+        <div class="icon">⭐</div>
+        <div class="label">Round Score</div>
+        <div class="value" id="roundScore">0</div>
+      </div>
+      <div class="stat-box score">
+        <div class="icon">🏆</div>
+        <div class="label">Total Score</div>
+        <div class="value" id="totalScore">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    A logic puzzle, not a game of chance for money. There are no bets, no currency,<br>
+    and no cashouts here &mdash; just gems, mines, and a points counter.
+  </div>
 </div>
 
-<div class="card">
-<h3>🎯 Strategy</h3>
-<p>Every click is a decision. Think before you reveal.</p>
-</div>
+<script>
+(function () {
+  const GRID_SIZE = 25;
+  const COLS = 5;
 
-<div class="card">
-<h3>⚡ Fast Gameplay</h3>
-<p>Quick rounds with a clean and responsive interface.</p>
-</div>
+  const gridEl = document.getElementById('grid');
+  const multTrackEl = document.getElementById('multTrack');
+  const mineCountEl = document.getElementById('mineCount');
+  const newGameBtn = document.getElementById('newGameBtn');
+  const collectBtn = document.getElementById('collectBtn');
+  const statusBanner = document.getElementById('statusBanner');
+  const gemsFoundEl = document.getElementById('gemsFound');
+  const minesValueEl = document.getElementById('minesValue');
+  const roundScoreEl = document.getElementById('roundScore');
+  const totalScoreEl = document.getElementById('totalScore');
 
-</div>
+  let cells = [];          // 'gem' or 'mine' per index
+  let revealed = [];       // boolean per index
+  let mineCount = 3;
+  let gemsRevealed = 0;
+  let gameActive = false;
+  let totalScore = 0;
+  let basePoints = 100;     // points per round if fully cleared, scaled by mine count
 
-</div>
+  function computeMultipliers(mines) {
+    // Generates a simple increasing multiplier curve based on mine count.
+    // Pure points-based — not tied to any currency or payout.
+    const safeTiles = GRID_SIZE - mines;
+    const picks = Math.min(6, safeTiles);
+    const mults = [];
+    for (let i = 1; i <= picks; i++) {
+      // higher mine count -> steeper multiplier growth
+      const growth = 1 + (mines / 24) * 1.6;
+      const m = Math.pow(growth, i) * (1 + i * 0.05);
+      mults.push(Math.round(m * 100) / 100);
+    }
+    return mults;
+  }
+
+  function renderMultTrack(mults, hitIndex) {
+    multTrackEl.innerHTML = '';
+    mults.forEach((m, i) => {
+      const pill = document.createElement('div');
+      pill.className = 'mult-pill';
+      if (i < hitIndex) pill.classList.add('reached');
+      if (i === hitIndex) pill.classList.add('active');
+      pill.innerHTML = `<div class="x">${m.toFixed(2)}x</div><div class="hits">${i + 1} hit${i === 0 ? '' : 's'}</div>`;
+      multTrackEl.appendChild(pill);
+    });
+  }
+
+  let currentMults = [];
+  let autoResetTimer = null;
+
+  function newGrid() {
+    if (autoResetTimer) {
+      clearTimeout(autoResetTimer);
+      autoResetTimer = null;
+    }
+    mineCount = parseInt(mineCountEl.value, 10);
+    minesValueEl.textContent = mineCount;
+
+    cells = new Array(GRID_SIZE).fill('gem');
+    let placed = 0;
+    while (placed < mineCount) {
+      const idx = Math.floor(Math.random() * GRID_SIZE);
+      if (cells[idx] !== 'mine') {
+        cells[idx] = 'mine';
+        placed++;
+      }
+    }
+    revealed = new Array(GRID_SIZE).fill(false);
+    gemsRevealed = 0;
+    gameActive = true;
+    currentMults = computeMultipliers(mineCount);
+
+    gemsFoundEl.textContent = '0';
+    roundScoreEl.textContent = '0';
+    statusBanner.className = 'status-banner';
+    statusBanner.textContent = 'Pick a tile to reveal a gem or a mine';
+    collectBtn.disabled = true;
+
+    renderMultTrack(currentMults, -1);
+    renderGrid();
+  }
+
+  function renderGrid() {
+    gridEl.innerHTML = '';
+    for (let i = 0; i < GRID_SIZE; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'cell';
+      btn.dataset.index = i;
+
+      if (revealed[i]) {
+        btn.classList.add('revealed');
+        if (cells[i] === 'gem') {
+          btn.classList.add('gem');
+          btn.textContent = '💎';
+        } else {
+          btn.classList.add('mine');
+          btn.textContent = '💣';
+        }
+      } else if (!gameActive) {
+        btn.classList.add('disabled');
+        // reveal everything at end of round (loss) for transparency
+        if (cells[i] === 'mine') {
+          btn.textContent = '💣';
+          btn.style.opacity = '0.45';
+        } else {
+          btn.textContent = '';
+        }
+      } else {
+        btn.textContent = '?';
+        btn.addEventListener('click', onCellClick);
+      }
+
+      gridEl.appendChild(btn);
+    }
+  }
+
+  function onCellClick(e) {
+    if (!gameActive) return;
+    const idx = parseInt(e.currentTarget.dataset.index, 10);
+    if (revealed[idx]) return;
+
+    revealed[idx] = true;
+
+    if (cells[idx] === 'mine') {
+      gameActive = false;
+      revealAllAndEnd(false);
+      return;
+    }
+
+    gemsRevealed++;
+    gemsFoundEl.textContent = gemsRevealed;
+
+    const multIndex = Math.min(gemsRevealed, currentMults.length) - 1;
+    const mult = currentMults[Math.min(gemsRevealed - 1, currentMults.length - 1)];
+    const roundScore = Math.round(basePoints * mult);
+    roundScoreEl.textContent = roundScore;
+
+    renderMultTrack(currentMults, multIndex);
+    collectBtn.disabled = false;
+
+    const safeTiles = GRID_SIZE - mineCount;
+    if (gemsRevealed >= safeTiles) {
+      // cleared the whole board
+      collectRound(true);
+      return;
+    }
+
+    statusBanner.className = 'status-banner';
+    statusBanner.textContent = `${gemsRevealed} gem${gemsRevealed === 1 ? '' : 's'} found — keep going or collect`;
+
+    renderGrid();
+  }
+
+  function revealAllAndEnd(won) {
+    statusBanner.className = 'status-banner lose';
+    statusBanner.textContent = '💣 Mine hit — round score lost. New grid coming up...';
+    roundScoreEl.textContent = '0';
+    collectBtn.disabled = true;
+    renderGrid();
+    scheduleAutoReset();
+  }
+
+  function collectRound(cleared) {
+    gameActive = false;
+    const finalScore = parseInt(roundScoreEl.textContent, 10) || 0;
+    totalScore += finalScore;
+    totalScoreEl.textContent = totalScore;
+    statusBanner.className = 'status-banner win';
+    statusBanner.textContent = cleared
+      ? `🎉 Board cleared! +${finalScore} points collected. New grid coming up...`
+      : `✅ Collected ${finalScore} points. New grid coming up...`;
+    collectBtn.disabled = true;
+    renderGrid();
+    scheduleAutoReset();
+  }
+
+  function scheduleAutoReset(delayMs) {
+    if (autoResetTimer) clearTimeout(autoResetTimer);
+    autoResetTimer = setTimeout(() => {
+      newGrid();
+    }, delayMs || 1800);
+  }
+
+  collectBtn.addEventListener('click', () => {
+    if (!gameActive || gemsRevealed === 0) return;
+    collectRound(false);
+  });
+
+  newGameBtn.addEventListener('click', newGrid);
+
+  newGrid();
+})();
+</script>
 
 </body>
 </html>
